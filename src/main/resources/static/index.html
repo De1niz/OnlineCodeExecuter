@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodePlayground - Online Java IDE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.15.0/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.15.0/ext-language_tools.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-hover: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --border: #475569;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1e1b4b 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header Styles */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            animation: slideDown 0.8s ease;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            flex: 1;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Editor Section */
+        .editor-section {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            animation: slideLeft 0.8s ease;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .theme-selector {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        #editor {
+            flex: 1;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid var(--border);
+            min-height: 500px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+        }
+
+        /* Output Section */
+        .output-section {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            animation: slideRight 0.8s ease;
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .output-display {
+            flex: 1;
+            background: #1a1a1a;
+            border-radius: 15px;
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: #00ff88;
+            border: 2px solid var(--border);
+            overflow-y: auto;
+            min-height: 500px;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        /* Input Section */
+        .input-section {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid var(--warning);
+            margin-top: 15px;
+            display: none;
+            animation: slideUp 0.5s ease;
+        }
+
+        .input-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            color: var(--warning);
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-field {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 12px 15px;
+            border-radius: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .input-btn {
+            background: var(--warning);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .input-btn:hover {
+            background: #e69500;
+            transform: translateY(-2px);
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            margin-top: 25px;
+            padding: 25px;
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            animation: slideUp 0.8s ease;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 15px;
+            font-family: inherit;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: var(--error);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--warning);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.ready { background: var(--success); animation: none; }
+        .status-dot.running { background: var(--primary); animation: pulse 1s infinite; }
+        .status-dot.error { background: var(--error); animation: none; }
+        .status-dot.waiting { background: var(--warning); animation: pulse 1.5s infinite; }
+
+        /* Code Examples */
+        .examples {
+            margin-top: 25px;
+            padding: 25px;
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+        }
+
+        .examples h3 {
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        .example-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .example-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .example-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Animations */
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideLeft {
+            from { transform: translateX(-50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideRight {
+            from { transform: translateX(50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Terminal-like output styling */
+        .terminal-line {
+            margin-bottom: 5px;
+        }
+
+        .terminal-prompt {
+            color: #00ff88;
+        }
+
+        .terminal-output {
+            color: #ffffff;
+        }
+
+        .terminal-error {
+            color: #ff6b6b;
+        }
+
+        .terminal-warning {
+            color: #f59e0b;
+        }
+
+        .terminal-timeout {
+            color: #8b5cf6;
+        }
+
+        .terminal-info {
+            color: #60a5fa;
+        }
+
+        .terminal-input {
+            color: #fbbf24;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Header -->
+    <header class="header">
+        <h1>🚀 CodePlayground</h1>
+        <p>Write, Run, and Experiment with Java Code in Real-Time</p>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-number" id="linesWritten">0</div>
+                <div class="stat-label">Lines Written</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="codeRuns">0</div>
+                <div class="stat-label">Code Executions</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="sessionTime">00:00</div>
+                <div class="stat-label">Session Time</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Editor Section -->
+        <section class="editor-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-code"></i>
+                    Code Editor
+                </h2>
+                <select class="theme-selector" id="themeSelector">
+                    <option value="monokai">Monokai</option>
+                    <option value="github">GitHub</option>
+                    <option value="tomorrow_night">Dark</option>
+                    <option value="chrome">Light</option>
+                </select>
+            </div>
+            <div id="editor">// Welcome to CodePlayground! 🎉
+                // Write your Java code here and click Run
+
+                public class HelloWorld {
+                public static void main(String[] args) {
+                System.out.println("🚀 Hello, Code Explorer!");
+                System.out.println("🌈 Welcome to your coding playground!");
+
+                // Try writing some code below
+                for (int i = 1; i <= 3; i++) {
+                System.out.println("⭐ Count: " + i);
+                }
+                }
+                }</div>
+        </section>
+
+        <!-- Output Section -->
+        <section class="output-section">
+            <div class="output-header">
+                <h2 class="section-title">
+                    <i class="fas fa-terminal"></i>
+                    Output Console
+                </h2>
+                <button class="btn-secondary" onclick="clearOutput()">
+                    <i class="fas fa-broom"></i>
+                    Clear
+                </button>
+            </div>
+            <div id="outputDisplay" class="output-display">
+                <div class="terminal-line">
+                    <span class="terminal-prompt">$</span>
+                    <span class="terminal-output"> Ready to execute Java code...</span>
+                </div>
+                <div class="terminal-line">
+                    <span class="terminal-prompt">$</span>
+                    <span class="terminal-output"> Write your code and press Run!</span>
+                </div>
+            </div>
+
+            <!-- Input Section -->
+            <div class="input-section" id="inputSection">
+                <div class="input-header">
+                    <i class="fas fa-keyboard"></i>
+                    <h3>Program Input Required</h3>
+                </div>
+                <div class="input-container">
+                    <input type="text" id="userInput" class="input-field" placeholder="Enter your input here..." autocomplete="off">
+                    <button class="input-btn" onclick="sendInputToProgram()">
+                        <i class="fas fa-paper-plane"></i>
+                        Send
+                    </button>
+                </div>
+                <div style="margin-top: 10px; font-size: 12px; color: var(--text-secondary);">
+                    <i class="fas fa-info-circle"></i>
+                    Press Enter to send input quickly
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Code Examples -->
+    <section class="examples">
+        <h3>💡 Quick Examples - Try These!</h3>
+        <div class="example-buttons">
+            <button class="example-btn" onclick="loadExample('hello')">Hello World</button>
+            <button class="example-btn" onclick="loadExample('calculator')">Simple Calculator</button>
+            <button class="example-btn" onclick="loadExample('fibonacci')">Fibonacci Series</button>
+            <button class="example-btn" onclick="loadExample('patterns')">Star Patterns</button>
+            <button class="example-btn" onclick="loadExample('games')">Number Game</button>
+            <button class="example-btn" onclick="loadExample('arrays')">Array Operations</button>
+            <button class="example-btn" onclick="loadExample('input')">Input Demo</button>
+        </div>
+    </section>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="btn btn-primary" onclick="executeCode()" id="runButton">
+            <i class="fas fa-play"></i>
+            Run Code
+        </button>
+        <button class="btn btn-secondary" onclick="formatCode()">
+            <i class="fas fa-magic"></i>
+            Format
+        </button>
+        <button class="btn btn-secondary" onclick="shareCode()">
+            <i class="fas fa-share"></i>
+            Share
+        </button>
+        <button class="btn btn-danger" onclick="stopExecution()" id="stopButton" style="display: none;">
+            <i class="fas fa-stop"></i>
+            Stop
+        </button>
+        <div class="status-indicator">
+            <div class="status-dot ready" id="statusDot"></div>
+            <span id="statusText">Ready</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ACE Editor Initialization
+    let editor;
+    let stompClient = null;
+    let currentRequestId = null;
+    let linesWritten = 0;
+    let codeRuns = 0;
+    let sessionStart = Date.now();
+
+    // WebSocket ve polling kontrol değişkenleri
+    let isExecutionInProgress = false;
+    let pollingInterval = null;
+    let websocketConnected = false;
+    let waitingForInput = false;
+
+    // Example codes
+    const examples = {
+        hello: `// Simple Hello World with style!
+public class HelloWorld {
+    public static void main(String[] args) {
+        System.out.println("🎉 Welcome to CodePlayground!");
+        System.out.println("🚀 Your Java code is running live!");
+
+        String[] messages = {
+            "🌟 Explore the possibilities!",
+            "💡 Try writing your own code!",
+            "🎯 Challenge yourself!"
+        };
+
+        for (String msg : messages) {
+            System.out.println("💬 " + msg);
+        }
+    }
+}`,
+
+        calculator: `// Simple Calculator with Input
+import java.util.Scanner;
+
+public class Calculator {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("🧮 Simple Calculator");
+        System.out.println("====================");
+
+        System.out.print("Enter first number: ");
+        double num1 = scanner.nextDouble();
+
+        System.out.print("Enter second number: ");
+        double num2 = scanner.nextDouble();
+
+        System.out.println("\\n📊 Results:");
+        System.out.println("Addition: " + (num1 + num2));
+        System.out.println("Subtraction: " + (num1 - num2));
+        System.out.println("Multiplication: " + (num1 * num2));
+        System.out.println("Division: " + (num1 / num2));
+
+        scanner.close();
+    }
+}`,
+
+        fibonacci: `// Fibonacci Series
+public class Fibonacci {
+    public static void main(String[] args) {
+        int n = 10;
+        System.out.println("🔢 Fibonacci Series (First " + n + " numbers):");
+
+        long first = 0, second = 1;
+
+        for (int i = 1; i <= n; i++) {
+            System.out.print("✨ " + first + " ");
+
+            long next = first + second;
+            first = second;
+            second = next;
+
+            // Add some visual flair
+            if (i % 5 == 0) System.out.println();
+        }
+        System.out.println("\\n🎯 Sequence complete!");
+    }
+}`,
+
+        patterns: `// Star Patterns
+public class StarPatterns {
+    public static void main(String[] args) {
+        System.out.println("🌟 Star Pattern Time!\\n");
+
+        // Pyramid
+        System.out.println("▲ Pyramid Pattern:");
+        int rows = 5;
+        for (int i = 1; i <= rows; i++) {
+            for (int j = 1; j <= rows - i; j++) {
+                System.out.print(" ");
+            }
+            for (int k = 1; k <= (2 * i - 1); k++) {
+                System.out.print("★");
+            }
+            System.out.println();
+        }
+
+        System.out.println("\\n❄️ Diamond Pattern:");
+        // Diamond
+        for (int i = 1; i <= rows; i++) {
+            for (int j = rows; j > i; j--) {
+                System.out.print(" ");
+            }
+            for (int k = 1; k <= (2 * i - 1); k++) {
+                System.out.print("♦");
+            }
+            System.out.println();
+        }
+        for (int i = rows - 1; i >= 1; i--) {
+            for (int j = rows; j > i; j--) {
+                System.out.print(" ");
+            }
+            for (int k = 1; k <= (2 * i - 1); k++) {
+                System.out.print("♦");
+            }
+            System.out.println();
+        }
+    }
+}`,
+
+        games: `// Simple Number Guessing Game
+import java.util.Random;
+import java.util.Scanner;
+
+public class NumberGame {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        Random random = new Random();
+
+        int secretNumber = random.nextInt(100) + 1;
+        int attempts = 0;
+        int maxAttempts = 7;
+
+        System.out.println("🎮 Welcome to the Number Guessing Game!");
+        System.out.println("🔢 I'm thinking of a number between 1 and 100");
+        System.out.println("🎯 You have " + maxAttempts + " attempts to guess it!\\n");
+
+        while (attempts < maxAttempts) {
+            System.out.print("💭 Enter your guess: ");
+            int guess = scanner.nextInt();
+            attempts++;
+
+            if (guess == secretNumber) {
+                System.out.println("🎉 Congratulations! You guessed it in " + attempts + " attempts!");
+                break;
+            } else if (guess < secretNumber) {
+                System.out.println("📈 Too low! Try higher.");
+            } else {
+                System.out.println("📉 Too high! Try lower.");
+            }
+
+            System.out.println("⏳ Attempts left: " + (maxAttempts - attempts));
+            System.out.println();
+        }
+
+        if (attempts == maxAttempts) {
+            System.out.println("💔 Game Over! The number was: " + secretNumber);
+        }
+
+        scanner.close();
+    }
+}`,
+
+        arrays: `// Array Operations Demo
+import java.util.Arrays;
+
+public class ArrayDemo {
+    public static void main(String[] args) {
+        System.out.println("📊 Array Operations Demo\\n");
+
+        // Create and initialize array
+        int[] numbers = {5, 2, 8, 1, 9, 3, 7, 4, 6};
+
+        System.out.println("📋 Original Array: " + Arrays.toString(numbers));
+
+        // Sort array
+        Arrays.sort(numbers);
+        System.out.println("🔢 Sorted Array: " + Arrays.toString(numbers));
+
+        // Find min and max
+        int min = numbers[0];
+        int max = numbers[numbers.length - 1];
+        System.out.println("📈 Min value: " + min);
+        System.out.println("📉 Max value: " + max);
+
+        // Calculate average
+        double sum = 0;
+        for (int num : numbers) {
+            sum += num;
+        }
+        double average = sum / numbers.length;
+        System.out.println("📊 Average: " + average);
+
+        // Reverse array
+        System.out.println("🔄 Reversed Array:");
+        for (int i = numbers.length - 1; i >= 0; i--) {
+            System.out.print(numbers[i] + " ");
+        }
+        System.out.println();
+    }
+}`,
+
+        input: `// Interactive Input Demo
+import java.util.Scanner;
+
+public class InteractiveDemo {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("🎭 Interactive Demo Started!");
+        System.out.println("============================\\n");
+
+        System.out.print("👤 What's your name? ");
+        String name = scanner.nextLine();
+
+        System.out.print("🎂 How old are you? ");
+        int age = scanner.nextInt();
+        scanner.nextLine(); // Clear buffer
+
+        System.out.print("💼 What do you do? ");
+        String job = scanner.nextLine();
+
+        System.out.println("\\n📝 Here's your profile:");
+        System.out.println("=======================");
+        System.out.println("Name: " + name);
+        System.out.println("Age: " + age);
+        System.out.println("Profession: " + job);
+        System.out.println("\\n🎉 Thanks for sharing!");
+
+        scanner.close();
+    }
+}`
+    };
+
+    function init() {
+        // Önce elementlerin yüklendiğinden emin ol
+        if (!document.getElementById('editor') || !document.getElementById('themeSelector')) {
+            console.error('Required elements not found, retrying...');
+            setTimeout(init, 100);
+            return;
+        }
+
+        // Initialize ACE Editor
+        editor = ace.edit("editor");
+        editor.setTheme("ace/theme/monokai");
+        editor.session.setMode("ace/mode/java");
+        editor.setOptions({
+            enableBasicAutocompletion: true,
+            enableLiveAutocompletion: true,
+            enableSnippets: true,
+            fontSize: "14px",
+            fontFamily: "'JetBrains Mono', monospace",
+            showPrintMargin: false,
+            showGutter: true,
+            highlightActiveLine: true,
+            tabSize: 4,
+            useSoftTabs: true
+        });
+
+        // Theme selector event listener'ını kur
+        const themeSelector = document.getElementById('themeSelector');
+        if (themeSelector) {
+            themeSelector.addEventListener('change', function(e) {
+                const theme = e.target.value;
+                let aceTheme = 'ace/theme/monokai';
+
+                switch(theme) {
+                    case 'github': aceTheme = 'ace/theme/github'; break;
+                    case 'tomorrow_night': aceTheme = 'ace/theme/tomorrow_night'; break;
+                    case 'chrome': aceTheme = 'ace/theme/chrome'; break;
+                    default: aceTheme = 'ace/theme/monokai';
+                }
+
+                editor.setTheme(aceTheme);
+            });
+        }
+
+        // Input field enter event listener
+        const userInput = document.getElementById('userInput');
+        if (userInput) {
+            userInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendInputToProgram();
+                }
+            });
+        }
+
+        // WebSocket bağlantısını kur
+        connectWebSocket();
+
+        // Update session timer
+        setInterval(updateSessionTime, 1000);
+
+        // Track lines written
+        editor.session.on('change', function() {
+            const lineCount = editor.session.getLength();
+            document.getElementById('linesWritten').textContent = lineCount;
+        });
+
+        // Initialize line count
+        document.getElementById('linesWritten').textContent = editor.session.getLength();
+
+        console.log('Application initialized successfully');
+    }
+
+    function connectWebSocket() {
+        try {
+            const socket = new SockJS('/ws-code-execution');
+            stompClient = Stomp.over(socket);
+
+            // Debug modunu kapat (daha az log)
+            stompClient.debug = null;
+
+            stompClient.connect({}, function(frame) {
+                console.log('WebSocket connected successfully');
+                websocketConnected = true;
+                updateStatus('Ready', 'ready');
+
+                // Execution result subscription
+                stompClient.subscribe('/topic/execution-result', function(message) {
+                    try {
+                        const result = JSON.parse(message.body);
+                        console.log('WebSocket message received:', result);
+
+                        handleExecutionResult(result);
+                    } catch (e) {
+                        console.error('Error parsing WebSocket message:', e);
+                    }
+                });
+
+            }, function(error) {
+                console.error('WebSocket connection failed:', error);
+                websocketConnected = false;
+                updateStatus('WebSocket Disconnected', 'error');
+
+                // WebSocket bağlantısı başarısız olursa, 5 saniye sonra yeniden dene
+                setTimeout(connectWebSocket, 5000);
+            });
+        } catch (error) {
+            console.error('WebSocket initialization error:', error);
+            websocketConnected = false;
+        }
+    }
+
+    function executeCode() {
+        if (isExecutionInProgress) {
+            displayOutput('⚠️ Please wait for current execution to complete', 'warning');
+            return;
+        }
+
+        const code = editor.getValue();
+        if (!code.trim()) {
+            displayOutput('❌ Error: Please write some code first!', 'error');
+            return;
+        }
+
+        // Execution state'i sıfırla
+        isExecutionInProgress = true;
+        currentRequestId = null;
+        waitingForInput = false;
+        codeRuns++;
+
+        document.getElementById('codeRuns').textContent = codeRuns;
+        updateStatus('Sending Code...', 'running');
+        document.getElementById('runButton').disabled = true;
+        document.getElementById('stopButton').style.display = 'flex';
+
+        // Önceki çıktıyı temizle ve loading mesajını göster
+        clearOutput();
+        displayOutput('🚀 Launching your code...\n⏳ Please wait while we execute your Java program...', 'info');
+
+        // API'ye kod gönder
+        fetch('/api/code/execute', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                code: code,
+                language: 'java'
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Execution started:', data);
+                currentRequestId = data.id;
+
+                // WebSocket bağlı değilse veya 3 saniye içinde cevap gelmezse polling başlat
+                setTimeout(() => {
+                    if (isExecutionInProgress && !websocketConnected) {
+                        startPolling(data.id);
+                    }
+                }, 5000);
+
+                // Güvenlik için 35 saniye sonra timeout
+                setTimeout(() => {
+                    if (isExecutionInProgress) {
+                        handleExecutionTimeout();
+                    }
+                }, 35000);
+
+            })
+            .catch(error => {
+                console.error('Error starting execution:', error);
+                handleExecutionError('Failed to start execution: ' + error.message);
+            });
+    }
+
+    function handleExecutionResult(result) {
+        // Sadece current request için işle
+        if (result.requestId === currentRequestId && isExecutionInProgress) {
+            console.log('Processing result for request:', result.requestId);
+
+            // Polling'i durdur
+            stopPolling();
+
+            // Input kontrolü
+            if (result.output && result.output.includes('[INPUT_REQUIRED]')) {
+                showInputSection();
+                displayOutput('💡 Program is waiting for your input...', 'info');
+                updateStatus('Waiting for Input', 'waiting');
+                return;
+            }
+
+            // Sonucu göster
+            if (result.output) {
+                displayOutput(result.output, result.status === 'COMPLETED' ? 'success' : 'error');
+            }
+
+            // Durumu güncelle
+            if (result.status === 'COMPLETED' || result.status === 'FAILED' || result.status === 'ERROR') {
+                finishExecution();
+                updateStatus(
+                    result.status === 'COMPLETED' ? 'Execution Complete' : 'Execution Failed',
+                    result.status === 'COMPLETED' ? 'ready' : 'error'
+                );
+            }
+        }
+    }
+
+    function startPolling(requestId) {
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+        }
+
+        console.log('Starting polling for request:', requestId);
+        pollingInterval = setInterval(() => {
+            if (!isExecutionInProgress) {
+                stopPolling();
+                return;
+            }
+
+            fetch(`/api/code/status/${requestId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(statusData => {
+                    console.log('Polling result:', statusData);
+
+                    if (statusData.status === 'COMPLETED' || statusData.status === 'FAILED') {
+                        displayOutput(statusData.output || 'Execution completed',
+                            statusData.status === 'COMPLETED' ? 'success' : 'error');
+                        finishExecution();
+                        updateStatus(
+                            statusData.status === 'COMPLETED' ? 'Execution Complete' : 'Execution Failed',
+                            statusData.status === 'COMPLETED' ? 'ready' : 'error'
+                        );
+                    } else if (statusData.status === 'PROCESSING') {
+                        updateStatus('Executing Code...', 'running');
+                    }
+                })
+                .catch(error => {
+                    console.error('Polling error:', error);
+                    // Polling hatasında devam et, bir sonraki denemede tekrar dener
+                });
+        }, 2000); // 2 saniyede bir kontrol et
+    }
+
+    function stopPolling() {
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
+    }
+
+    function finishExecution() {
+        isExecutionInProgress = false;
+        waitingForInput = false;
+        document.getElementById('runButton').disabled = false;
+        document.getElementById('stopButton').style.display = 'none';
+        hideInputSection();
+        stopPolling();
+    }
+
+    function handleExecutionError(errorMessage) {
+        displayOutput('❌ ' + errorMessage, 'error');
+        finishExecution();
+        updateStatus('Execution Failed', 'error');
+    }
+
+    function handleExecutionTimeout() {
+        if (isExecutionInProgress) {
+            displayOutput('⏰ Execution timeout: Process took too long to complete', 'timeout');
+            finishExecution();
+            updateStatus('Timeout', 'error');
+        }
+    }
+
+    // Input handling functions
+    function showInputSection() {
+        const inputSection = document.getElementById('inputSection');
+        if (inputSection) {
+            inputSection.style.display = 'block';
+            waitingForInput = true;
+            updateStatus('Waiting for Input', 'waiting');
+
+            // Input alanına focus et
+            const inputField = document.getElementById('userInput');
+            if (inputField) {
+                inputField.focus();
+            }
+        }
+    }
+
+    function hideInputSection() {
+        const inputSection = document.getElementById('inputSection');
+        if (inputSection) {
+            inputSection.style.display = 'none';
+            waitingForInput = false;
+
+            // Input alanını temizle
+            const inputField = document.getElementById('userInput');
+            if (inputField) {
+                inputField.value = '';
+            }
+        }
+    }
+
+    function sendInputToProgram() {
+        const inputField = document.getElementById('userInput');
+        const input = inputField ? inputField.value.trim() : '';
+
+        if (!input) {
+            displayOutput('⚠️ Please enter some input', 'warning');
+            return;
+        }
+
+        if (currentRequestId && waitingForInput) {
+            // Input'u backend'e gönder
+            fetch('/api/code/input', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    requestId: currentRequestId,
+                    input: input
+                })
+            })
+                .then(response => {
+                    if (response.ok) {
+                        displayOutput('📥 Input sent: ' + input, 'input');
+                        hideInputSection();
+                        updateStatus('Processing Input...', 'running');
+                    } else {
+                        throw new Error('Failed to send input');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sending input:', error);
+                    displayOutput('❌ Failed to send input', 'error');
+                });
+        } else {
+            displayOutput('⚠️ No active program waiting for input', 'warning');
+        }
+    }
+
+    function stopExecution() {
+        if (currentRequestId && isExecutionInProgress) {
+            fetch('/api/code/stop', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    requestId: currentRequestId
+                })
+            })
+                .then(response => {
+                    if (response.ok) {
+                        displayOutput('⏹️ Execution stopped by user', 'warning');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error stopping execution:', error);
+                })
+                .finally(() => {
+                    finishExecution();
+                    updateStatus('Stopped', 'error');
+                });
+        } else {
+            finishExecution();
+            updateStatus('Ready', 'ready');
+        }
+    }
+
+    function displayOutput(output, type) {
+        const outputDisplay = document.getElementById('outputDisplay');
+        if (!outputDisplay) {
+            console.error('Output display element not found');
+            return;
+        }
+
+        const timestamp = new Date().toLocaleTimeString();
+
+        // Geliştirilmiş prompt belirleme
+        let prompt = '✅';
+        let cssClass = 'terminal-output';
+
+        if (type === 'error') {
+            prompt = '❌';
+            cssClass = 'terminal-error';
+        } else if (type === 'info') {
+            prompt = 'ℹ️';
+            cssClass = 'terminal-info';
+        } else if (type === 'warning') {
+            prompt = '⚠️';
+            cssClass = 'terminal-warning';
+        } else if (type === 'timeout') {
+            prompt = '⏰';
+            cssClass = 'terminal-timeout';
+        } else if (type === 'success') {
+            prompt = '✅';
+            cssClass = 'terminal-output';
+        } else if (type === 'input') {
+            prompt = '📥';
+            cssClass = 'terminal-input';
+        }
+
+        // Çıktıyı satırlara ayır ve her satır için ayrı işlem yap
+        const lines = output.split('\n');
+        let formattedOutput = '';
+
+        // İlk satır için timestamp göster, diğer satırlar için girinti ekle
+        lines.forEach((line, index) => {
+            if (line.trim() !== '') {
+                if (index === 0) {
+                    formattedOutput += `<div class="terminal-line">
+                    <span class="terminal-prompt">${prompt} [${timestamp}]</span>
+                    <span class="${cssClass}"> ${line}</span>
+                </div>`;
+                } else {
+                    formattedOutput += `<div class="terminal-line">
+                    <span class="terminal-prompt" style="visibility: hidden;">${prompt} [${timestamp}]</span>
+                    <span class="${cssClass}" style="margin-left: 20px;"> ${line}</span>
+                </div>`;
+                }
+            }
+        });
+
+        outputDisplay.innerHTML += formattedOutput;
+        outputDisplay.scrollTop = outputDisplay.scrollHeight;
+    }
+
+    function clearOutput() {
+        const outputDisplay = document.getElementById('outputDisplay');
+        if (outputDisplay) {
+            outputDisplay.innerHTML =
+                '<div class="terminal-line">' +
+                '<span class="terminal-prompt">$</span>' +
+                '<span class="terminal-output"> Output cleared. Ready for new execution...</span>' +
+                '</div>';
+        }
+        hideInputSection();
+    }
+
+    function updateStatus(text, state) {
+        const statusText = document.getElementById('statusText');
+        const statusDot = document.getElementById('statusDot');
+
+        if (statusText) statusText.textContent = text;
+        if (statusDot) statusDot.className = 'status-dot ' + state;
+    }
+
+    function updateSessionTime() {
+        const sessionTimeElement = document.getElementById('sessionTime');
+        if (sessionTimeElement) {
+            const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            sessionTimeElement.textContent = `${minutes}:${seconds}`;
+        }
+    }
+
+    function loadExample(exampleKey) {
+        if (examples[exampleKey]) {
+            editor.setValue(examples[exampleKey]);
+            editor.clearSelection();
+            displayOutput(`📝 Loaded example: ${exampleKey.replace(/([A-Z])/g, ' $1').toLowerCase()}`, 'info');
+        }
+    }
+
+    function formatCode() {
+        const session = editor.getSession();
+        session.setValue(session.getValue().replace(/\n\s*\n\s*\n/g, '\n\n'));
+        displayOutput('✨ Code formatted!', 'info');
+    }
+
+    function shareCode() {
+        const code = editor.getValue();
+        const blob = new Blob([code], { type: 'text/java' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'MyJavaCode.java';
+        a.click();
+        displayOutput('📁 Code downloaded as MyJavaCode.java', 'info');
+    }
+
+    // Sayfa tamamen yüklendiğinde başlat
+    window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

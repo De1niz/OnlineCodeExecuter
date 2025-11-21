@@ -1,0 +1,227 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+    session:
+      timeout: 30m
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+
+spring:
+  # H2 Database Configuration (Default - Maven ile çalışınca)
+  datasource:
+    url: jdbc:h2:mem:codeexecuterdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      max-lifetime: 600000
+
+  # JPA Configuration for H2
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
+    open-in-view: false
+
+  # H2 Console (Development)
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        trace: false
+        web-allow-others: false
+
+  # Web Configuration
+  web:
+    resources:
+      static-locations: classpath:/static/,classpath:/public/
+      cache:
+        period: 3600
+    cors:
+      allowed-origins: "*"
+      allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+      allowed-headers: "*"
+      allow-credentials: true
+
+  # MVC Configuration
+  mvc:
+    static-path-pattern: /**
+    throw-exception-if-no-handler-found: true
+
+  # Servlet Configuration
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+      enabled: true
+
+  # Async Configuration
+  task:
+    execution:
+      pool:
+        core-size: 5
+        max-size: 20
+        queue-capacity: 100
+        keep-alive: 60s
+      thread-name-prefix: code-executor-
+
+  # WebSocket Configuration
+  websocket:
+    allowed-origins: "*"
+
+# Application Specific Configuration
+app:
+  code-execution:
+    timeout: 30000
+    max-output-length: 10000
+    temp-dir: ./temp-code-execution
+    cleanup-enabled: true
+    cleanup-interval: 3600000
+  security:
+    cors:
+      enabled: true
+
+# Logging Configuration
+logging:
+  level:
+    com.firstspringproject.onlinecodeexecuter: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.web.socket: DEBUG
+    org.springframework.messaging: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/application.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+
+# Management endpoints (for monitoring)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+      show-components: when_authorized
+    metrics:
+      enabled: true
+
+# Profile specific settings
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+  # MySQL Database Configuration (Docker ile çalışınca)
+  datasource:
+    url: jdbc:mysql://mysql:3306/code_executer_db
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: my-secret-pw
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      max-lifetime: 600000
+  # JPA Configuration for MySQL
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: update
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
+    open-in-view: false
+  # H2 Console'u kapat
+  h2:
+    console:
+      enabled: false
+logging:
+  level:
+    com.firstspringproject.onlinecodeexecuter: DEBUG
+    org.hibernate: DEBUG
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  # MySQL Database Configuration (Development)
+  datasource:
+    url: jdbc:mysql://localhost:3309/code_executer_db
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: my-secret-pw
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+logging:
+  level:
+    com.firstspringproject.onlinecodeexecuter: DEBUG
+    org.hibernate: DEBUG
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  # MySQL Database Configuration (Production)
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:3306/code_executer_db
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:my-secret-pw}
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+logging:
+  level:
+    com.firstspringproject.onlinecodeexecuter: WARN
+    org.hibernate: WARN
+  file:
+    name: /var/log/code-executer/application.log
+
+    spring:
+      websocket:
+        allowed-origins: "*"
