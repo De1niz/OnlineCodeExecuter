@@ -69,7 +69,7 @@ docker-compose up --build
 -   Image: mysql8.0\
 -   Port: 3309:3306
 
-### Docker Kullanımı
+### Using Docker
 
 ``` bash
 docker ps
@@ -79,7 +79,7 @@ docker stop [id]
 docker start [id]
 ```
 
-## 🌐 Erişim Bilgileri
+## 🌐 Access Information
 
 -   API: http://localhost:8080\
 -   MySQL: localhost:3309
