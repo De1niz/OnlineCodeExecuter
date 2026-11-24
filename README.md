@@ -1,4 +1,4 @@
-# Online Java Code Executer - Professional Project Presentation
+# Online Java Code Executer - Project Presentation
 
 <p>
   <a href="https://de1niz.github.io/OnlineCodeExecuter/"><img src="https://img.shields.io/badge/Live%20Demo-Open%20CodePlayground-6C63FF?style=for-the-badge&logo=githubpages&logoColor=white" alt="Live Demo"></a>
