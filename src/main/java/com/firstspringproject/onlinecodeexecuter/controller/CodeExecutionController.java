@@ -34,6 +34,33 @@ public class CodeExecutionController {
         return repository.findById(id).orElse(null);
     }
 
+    @PostMapping("/input")
+    public void provideInput(@RequestBody InputRequest inputRequest) {
+        codeExecutionService.provideInput(inputRequest.getRequestId(), inputRequest.getInput());
+    }
+
+    @PostMapping("/stop")
+    public void stopExecution(@RequestBody StopRequest stopRequest) {
+        codeExecutionService.stopExecution(stopRequest.getRequestId());
+    }
+
+    public static class InputRequest {
+        private Long requestId;
+        private String input;
+
+        public Long getRequestId() { return requestId; }
+        public void setRequestId(Long requestId) { this.requestId = requestId; }
+        public String getInput() { return input; }
+        public void setInput(String input) { this.input = input; }
+    }
+
+    public static class StopRequest {
+        private Long requestId;
+
+        public Long getRequestId() { return requestId; }
+        public void setRequestId(Long requestId) { this.requestId = requestId; }
+    }
+
     public static class CodeRequest {
         private String code;
 

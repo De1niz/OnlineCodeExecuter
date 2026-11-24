@@ -1,4 +1,19 @@
-# Online Java Code Executer - Professional Project Presentation
+# Online Java Code Executer - Project Presentation
+
+<p>
+  <a href="https://de1niz.github.io/OnlineCodeExecuter/"><img src="https://img.shields.io/badge/Live%20Demo-Open%20CodePlayground-6C63FF?style=for-the-badge&logo=githubpages&logoColor=white" alt="Live Demo"></a>
+</p>
+
+## 🚀 Live Demo
+
+**👉 [Open CodePlayground](https://de1niz.github.io/OnlineCodeExecuter/)**: write Java code in your browser and run it instantly, with no installation needed.
+
+> ⏳ The backend runs on Render's free plan and sleeps when idle. The first run after a break can take up to about 1 minute while the server wakes up; after that it responds quickly.
+
+**How it is deployed**
+
+-   **Frontend:** GitHub Pages (`docs/index.html`)
+-   **Backend:** Spring Boot on [Render](https://onlinecodeexecuter.onrender.com) (REST API + WebSocket), built from the `Dockerfile`
 
 ## 📋 Project Overview
 
@@ -69,7 +84,7 @@ docker-compose up --build
 -   Image: mysql8.0\
 -   Port: 3309:3306
 
-### Docker Kullanımı
+### Using Docker
 
 ``` bash
 docker ps
@@ -79,7 +94,7 @@ docker stop [id]
 docker start [id]
 ```
 
-## 🌐 Erişim Bilgileri
+## 🌐 Access Information
 
 -   API: http://localhost:8080\
 -   MySQL: localhost:3309
