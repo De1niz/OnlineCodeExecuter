@@ -28,7 +28,7 @@ public class CodeExecutionService {
     private SimpMessagingTemplate messagingTemplate;
 
     // Timeout configuration
-    private static final int COMPILATION_TIMEOUT_SECONDS = 10;
+    private static final int COMPILATION_TIMEOUT_SECONDS = 40;
     private static final int EXECUTION_TIMEOUT_SECONDS = 30;
 
     // Input handling mekanizması
@@ -211,7 +211,7 @@ public class CodeExecutionService {
     }
 
     private ProcessOutput executeJavaProgramWithInput(File tempDir, String className, Long requestId, long startTime) throws IOException, InterruptedException {
-        ProcessBuilder executeProcess = new ProcessBuilder("java", "-cp", tempDir.getAbsolutePath(), className);
+        ProcessBuilder executeProcess = new ProcessBuilder("java", "-XX:TieredStopAtLevel=1", "-XX:+UseSerialGC", "-Xshare:auto", "-Xmx64m", "-cp", tempDir.getAbsolutePath(), className);
         Process execute = executeProcess.start();
         executionProcesses.put(requestId, execute);
 
@@ -398,7 +398,7 @@ public class CodeExecutionService {
     }
 
     private String compileJavaCode(File javaFile) throws IOException, InterruptedException {
-        ProcessBuilder compileProcess = new ProcessBuilder("javac", javaFile.getAbsolutePath());
+        ProcessBuilder compileProcess = new ProcessBuilder("javac", "-J-XX:TieredStopAtLevel=1", "-J-XX:+UseSerialGC", "-J-Xshare:auto", "-J-Xmx128m", javaFile.getAbsolutePath());
         Process compile = compileProcess.start();
 
         boolean compileFinished = compile.waitFor(COMPILATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
