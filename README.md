@@ -59,13 +59,13 @@ docker-compose up --build
 
 #### 🚀 Online Code Execute
 
--   Container Adı: onlinecodeexect\
+-   Container name: onlinecodeexect\
 -   Image: code-execute\
 -   Port: 8080:8080
 
 #### 🗄️ MySQL Database
 
--   Container Adı: mysql-1\
+-   Container name: mysql-1\
 -   Image: mysql8.0\
 -   Port: 3309:3306
 
